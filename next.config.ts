@@ -1,7 +1,14 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    domains: [
+      'static.vecteezy.com',
+      'cdni.iconscout.com',
+      'www.pngall.com',
+      'ouch-cdn2.icons8.com',
+    ],
+  },
 };
 
 export default nextConfig;
