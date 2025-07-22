@@ -1,22 +1,15 @@
 // lib/store/userSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-interface User {
-    designation: string;
-    dob: string;
-    lastName: string;
-    _id: string;
-    name: string;
-    email: string;
-  }
+import { User } from '@/interfaces/user';
+import { apiClient } from '@/lib/api/apiClient';
+
   
 export const fetchUsers = createAsyncThunk('users/fetch', async () => {
-  const res = await fetch('/api/users');
-  return await res.json();
+  return await apiClient<User[]>('/api/users');
 });
 
 export const deleteUser = createAsyncThunk('users/delete', async (id: string) => {
-  const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Failed to delete user');
+  await apiClient(`/api/users/${id}`, { method: 'DELETE' });
   return id;
 });
 

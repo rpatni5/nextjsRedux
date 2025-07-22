@@ -1,16 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface User {
-  designation: string;
-  dob: string;
-  lastName: string;
-  _id: string;
-  name: string;
-  email: string;
-  role:string;
-}
+import React, { createContext, useContext, useState } from 'react';
+import { User } from '@/interfaces/user';
+import { apiClient } from '@/lib/api/apiClient';
 
 interface UserContextType {
   users: User[];
@@ -25,8 +17,7 @@ interface UserContextType {
   }) => Promise<boolean>;
   addUser: (data: { name: string; email: string }) => Promise<boolean>;
   refreshUsers: () => Promise<void>;
-  deleteUser: (id: string) => Promise<boolean>
-
+  deleteUser: (id: string) => Promise<boolean>;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -38,15 +29,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/users');
-      const data = await res.json();
-
-      if (Array.isArray(data)) {
-        setUsers(data);
-      } else {
-        console.error("Expected array but got:", data);
-        setUsers([]);
-      }
+      const data = await apiClient<User[]>('/api/users');
+      setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching users', error);
       setUsers([]);
@@ -60,46 +44,43 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     if (existing) return existing;
 
     try {
-      const res = await fetch(`/api/users/${id}`);
-      if (!res.ok) return null;
-      return await res.json();
+      return await apiClient<User>(`/api/users/${id}`);
     } catch {
       return null;
     }
   };
 
-  const updateUser = async (id: string, data: {
-    name: string;
-    lastName: string;
-    email: string;
-    dob?: string;
-    designation?: string;
-  }): Promise<boolean> => {
+  const updateUser = async (
+    id: string,
+    data: {
+      name: string;
+      lastName: string;
+      email: string;
+      dob?: string;
+      designation?: string;
+    }
+  ): Promise<boolean> => {
     try {
-      const res = await fetch(`/api/users/${id}`, {
+      await apiClient(`/api/users/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: data,
       });
-      if (!res.ok) return false;
       await fetchUsers();
       return true;
-    } catch {
+    } catch (err) {
+      console.error('Update failed:', err);
       return false;
     }
   };
 
-
   const addUser = async (userData: { name: string; email: string }) => {
     try {
-      const res = await fetch('/api/users', {
+      await apiClient('/api/users', {
         method: 'POST',
-        body: JSON.stringify(userData),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        body: userData,
       });
-      return res.ok;
+      await fetchUsers();
+      return true;
     } catch (err) {
       console.error('Failed to add user:', err);
       return false;
@@ -108,22 +89,29 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   const deleteUser = async (id: string): Promise<boolean> => {
     try {
-      const res = await fetch(`/api/users/${id}`, {
+      await apiClient(`/api/users/${id}`, {
         method: 'DELETE',
       });
-      if (!res.ok) return false;
-  
-      await fetchUsers(); 
+      await fetchUsers();
       return true;
     } catch (err) {
       console.error('Delete failed:', err);
       return false;
     }
   };
-  
-  
+
   return (
-    <UserContext.Provider value={{ users, loading, getUserById, updateUser, refreshUsers: fetchUsers, addUser,deleteUser }}>
+    <UserContext.Provider
+      value={{
+        users,
+        loading,
+        getUserById,
+        updateUser,
+        refreshUsers: fetchUsers,
+        addUser,
+        deleteUser,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );
