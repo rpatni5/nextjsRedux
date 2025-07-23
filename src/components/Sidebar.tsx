@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FaTachometerAlt, FaUsers, FaCogs } from "react-icons/fa";
+import { FaTachometerAlt, FaUsers, FaCogs, FaLayerGroup, FaKey } from "react-icons/fa";
 import { useAppSelector } from "@/lib/store/hooks";
 import { useSession } from "next-auth/react";
+import { useState } from "react";
+import { FaChevronDown, FaChevronRight } from "react-icons/fa";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -12,30 +14,47 @@ export default function Sidebar() {
   const { data: session } = useSession();
   const role = session?.user?.role;
 
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   const navItems = [
     {
       title: "Dashboard",
       icon: <FaTachometerAlt />,
       href: "/admin/dashboard",
-      roles: ["admin", "worker"], 
+      roles: ["admin", "worker"],
     },
     {
       title: "Users",
       icon: <FaUsers />,
       href: "/admin/users",
-      roles: ["admin"], 
+      roles: ["admin"],
     },
     {
       title: "Settings",
       icon: <FaCogs />,
-      href: "/admin/settings",
-      roles: ["admin"], 
-    },
+      href: "#",
+      roles: ["admin"],
+      isParent: true,
+      toggle: () => setSettingsOpen(prev => !prev),
+      open: settingsOpen,
+      children: [
+        {
+          title: "Screens",
+          icon: <FaLayerGroup />,
+          href: "/admin/settings/screens",
+        },
+        {
+          title: "Permissions",
+          icon: <FaKey />,
+          href: "/admin/settings/permissions",
+        },
+      ]
+    }
   ];
 
   const visibleNavItems = role
-  ? navItems.filter(item => item.roles.includes(role))
-  : [];
+    ? navItems.filter(item => item.roles.includes(role))
+    : [];
 
   return (
     <div
@@ -52,19 +71,64 @@ export default function Sidebar() {
         {!sidebarCollapsed && <h2 style={styles.logo}>Admin Panel</h2>}
       </div>
       <nav style={styles.nav}>
-        {visibleNavItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            style={{
-              ...styles.link,
-              ...(pathname === item.href ? styles.activeLink : {})
-            }}
-          >
-            <span style={styles.icon}>{item.icon}</span>
-            {!sidebarCollapsed && item.title}
-          </Link>
-        ))}
+        {visibleNavItems.map((item) => {
+          if (item.isParent) {
+            return (
+              <div key={item.title}>
+                <div
+                  onClick={item.toggle}
+                  style={{
+                    ...styles.link,
+                    cursor: "pointer",
+                    justifyContent: "space-between", 
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <span style={styles.icon}>{item.icon}</span>
+                    {!sidebarCollapsed && item.title}
+                  </div>
+                  {!sidebarCollapsed && (
+                    <span style={styles.arrowIcon}>
+                      {item.open ? <FaChevronDown /> : <FaChevronRight />}
+                    </span>
+                  )}
+                </div>
+
+                {!sidebarCollapsed && item.open && item.children && (
+                  <div style={styles.subMenu}>
+                    {item.children.map(child => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        style={{
+                          ...styles.childLink,
+                          ...(pathname === child.href ? styles.activeLink : {})
+                        }}
+                      >
+                        <span style={styles.icon}>{child.icon}</span>
+                        {child.title}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              style={{
+                ...styles.link,
+                ...(pathname === item.href ? styles.activeLink : {})
+              }}
+            >
+              <span style={styles.icon}>{item.icon}</span>
+              {!sidebarCollapsed && item.title}
+            </Link>
+          );
+        })}
       </nav>
     </div>
   );
@@ -85,7 +149,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     transition: "width 0.3s ease",
     overflow: "hidden",
   },
-  
   header: {
     padding: "0 1.5rem",
     marginBottom: "2rem",
@@ -94,10 +157,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: "1.5rem",
     fontWeight: "bold",
   },
+  arrowIcon: {
+    marginLeft: "auto",
+    fontSize: "0.8rem",
+    color: "#cbd5e1",
+  },
+  
   nav: {
     display: "flex",
     flexDirection: "column",
-    gap: "1rem",
+    gap: "0.5rem",
   },
   link: {
     display: "flex",
@@ -109,11 +178,27 @@ const styles: { [key: string]: React.CSSProperties } = {
     transition: "background 0.2s ease",
   },
   activeLink: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     fontWeight: "bold",
   },
   icon: {
     marginRight: "0.75rem",
     fontSize: "1.1rem",
+  },
+  subMenu: {
+    display: "flex",
+    flexDirection: "column",
+    paddingLeft: "2rem",
+    gap: "0.3rem",
+    marginTop: "0.3rem",
+  },
+  childLink: {
+    display: "flex",
+    alignItems: "center",
+    padding: "0.5rem 1rem",
+    color: "#e2e8f0",
+    textDecoration: "none",
+    fontSize: "0.95rem",
+    borderRadius: "4px",
   },
 };

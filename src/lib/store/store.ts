@@ -2,6 +2,9 @@ import { configureStore } from '@reduxjs/toolkit'
 import themeSlice from './features/theme/themeSlice'
 import authSlice from './features/auth/authSlice'
 import userSlice from './features/user/userSlice'
+import screensSlice from './features/screens/screensSlice'
+import { permission } from 'process'
+import permissionSlice from './features/permissions/permissionSlice'
 
 
 export const createStore=() =>{
@@ -9,8 +12,11 @@ export const createStore=() =>{
         reducer: {
          theme : themeSlice,
          auth : authSlice,
-         users : userSlice
-        }
+         users : userSlice,
+         screens : screensSlice,
+         permission :permissionSlice,
+        },
+        devTools: process.env.NODE_ENV !== 'production',
       })
 }
 
