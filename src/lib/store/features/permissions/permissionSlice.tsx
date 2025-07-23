@@ -1,10 +1,12 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { apiClient } from '@/lib/api/apiClient';
+import { Role } from '@/lib/role';
 
 export interface Permission {
     _id: string;
     screenId: string | { _id: string; screenName: string };
     permissions: ('read' | 'write' | 'edit' | 'delete')[];
+    role: Role;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -23,7 +25,7 @@ const initialState: PermissionsState = {
 
 export const addPermissionAsync = createAsyncThunk(
     'permissions/add',
-    async (payload: { screenId: string; permissions: ('read' | 'write' | 'edit' | 'delete')[] }, { rejectWithValue }) => {
+    async (payload: { screenId: string; permissions: ('read' | 'write' | 'edit' | 'delete')[] , role: Role }, { rejectWithValue }) => {
         try {
             const response = await apiClient('/api/permissions', {
                 method: 'POST',
@@ -50,11 +52,11 @@ export const fetchPermissionsAsync = createAsyncThunk(
 
 export const editPermissionAsync = createAsyncThunk(
     'permissions/edit',
-    async (payload: { id: string; screenId: string; permissions: ('read' | 'write' | 'edit' | 'delete')[] }, { rejectWithValue }) => {
+    async (payload: { id: string; screenId: string; permissions: ('read' | 'write' | 'edit' | 'delete')[] , role: Role }, { rejectWithValue }) => {
         try {
             const response = await apiClient(`/api/permissions/${payload.id}`, {
                 method: 'PUT',
-                body: { permissions: payload.permissions , screenId : payload.screenId },
+                body: { permissions: payload.permissions , screenId : payload.screenId , role: payload.role},
             });
             return response;
         } catch (err: any) {

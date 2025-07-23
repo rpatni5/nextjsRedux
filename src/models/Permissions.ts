@@ -1,7 +1,9 @@
+import { Role, Roles } from "@/lib/role";
 import mongoose, { Schema, model, models } from "mongoose";
 
 export interface IPermission {
   screenId: mongoose.Types.ObjectId;
+  role: Role;
   permissions: ('read' | 'write' | 'edit' | 'delete')[];
   _id?: mongoose.Types.ObjectId;
   createdAt?: Date;
@@ -13,6 +15,11 @@ const permissionSchema = new Schema<IPermission>(
     screenId: {
       type: Schema.Types.ObjectId,
       ref: 'Screen',
+      required: true,
+    },
+    role: {
+      type: String,
+      enum : Roles,
       required: true,
     },
     permissions: {

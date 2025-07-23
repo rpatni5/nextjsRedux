@@ -6,12 +6,12 @@ import Permissions from '@/models/Permissions';
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
     await connectToDatabase();
     const { id } = params;
-    const { screenId, permissions } = await req.json();
+    const { screenId, permissions ,role } = await req.json();
 
     try {
         const updated = await Permissions.findByIdAndUpdate(
             id,
-            { screenId, permissions },
+            { screenId, permissions ,role},
             { new: true }
           ).populate('screenId', 'screenName'); 
           

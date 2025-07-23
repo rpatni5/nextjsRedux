@@ -9,10 +9,10 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   await connectToDatabase();
-  const { screenId, permissions } = await req.json();
+  const { screenId, permissions ,role} = await req.json();
 
   try {
-    const created = await Permissions.create({ screenId, permissions });
+    const created = await Permissions.create({ screenId, permissions ,role });
     const populated = await created.populate('screenId');
     return NextResponse.json(populated, { status: 201 });
   } catch (error) {

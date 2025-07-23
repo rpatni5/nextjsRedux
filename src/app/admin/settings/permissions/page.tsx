@@ -30,6 +30,8 @@ import {
   deletePermissionAsync,
 } from '@/lib/store/features/permissions/permissionSlice';
 import { fetchScreensAsync } from '@/lib/store/features/screens/screensSlice';
+import { Role } from '@/lib/role';
+
 
 const permissionOptions = ['read', 'write', 'edit', 'delete'];
 
@@ -40,9 +42,12 @@ export default function Permission() {
 
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 5 });
   const [open, setOpen] = useState(false);
-  const [editingScreen, setEditingScreen] = useState<null | { _id: string; screenId: string; permissions: string[] }>(null);
+  const [editingScreen, setEditingScreen] = useState<null | { _id: string; screenId: string; permissions: string[]; role: 'admin' | 'worker' }>(null);
+
   const [screenId, setScreenId] = useState('');
   const [permission, setPermissions] = useState<string[]>([]);
+  const [role, setRole] = useState<Role>('admin');
+
 
   useEffect(() => {
     dispatch(fetchPermissionsAsync());
@@ -60,7 +65,8 @@ export default function Permission() {
       dispatch(
         editPermissionAsync({
           id: editingScreen._id,
-          screenId, 
+          screenId,
+          role,
           permissions: permission as ('read' | 'write' | 'edit' | 'delete')[],
         })
       );
@@ -68,14 +74,16 @@ export default function Permission() {
       dispatch(
         addPermissionAsync({
           screenId,
+          role,
           permissions: permission as ('read' | 'write' | 'edit' | 'delete')[],
         })
       );
     }
-    
+
 
     setScreenId('');
     setPermissions([]);
+    setRole('admin');
     setEditingScreen(null);
     setOpen(false);
   };
@@ -101,7 +109,16 @@ export default function Permission() {
       headerName: 'Screen Name',
       flex: 1,
       valueGetter: (params: any) => {
-        return params.screenName ;
+        return params.screenName;
+      },
+      headerClassName: 'super-app-theme--header',
+    },
+    {
+      field: 'role',
+      headerName: 'Role',
+      flex: 1,
+      valueGetter: (params: any) => {
+        return params;
       },
       headerClassName: 'super-app-theme--header',
     },
@@ -206,11 +223,11 @@ export default function Permission() {
           </FormControl>
 
           <FormControl fullWidth sx={{ mb: 2 }}>
-          <InputLabel id="permission-select-label">Permissions</InputLabel>
+            <InputLabel id="permission-select-label">Permissions</InputLabel>
             <Select
               labelId="permission-select-label"
               multiple
-               label="Permissions"
+              label="Permissions"
               value={permission}
               onChange={(e) => setPermissions(e.target.value as string[])}
               renderValue={(selected) => selected.join(', ')}
@@ -224,6 +241,21 @@ export default function Permission() {
               ))}
             </Select>
           </FormControl>
+
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel id="role-select-label">Role</InputLabel>
+            <Select
+              labelId="role-select-label"
+              value={role}
+              onChange={(e) => setRole(e.target.value as Role)}
+              label="Role"
+              sx={{ borderRadius: 2 }}
+            >
+              <MenuItem value="admin">Admin</MenuItem>
+              <MenuItem value="worker">Worker</MenuItem>
+            </Select>
+          </FormControl>
+
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 2 }}>

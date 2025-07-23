@@ -25,16 +25,6 @@ function Login() {
     });
 
     if (res?.ok) {
-      // const session = await getSession();
-
-      // if (session?.user) {
-      //   dispatch(loginAction({
-      //     user: { name: session.user.name , email: session?.user?.email },
-      //     token: session?.accessToken || null
-
-      //   }));
-      // }
-
       setMessage("Logged in successfully");
       router.push("/admin/dashboard");
     } else {
