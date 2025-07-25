@@ -3,16 +3,39 @@
 import { useRouter } from 'next/navigation';
 import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { useUserContext } from '@/lib/store/context/UserContext';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FcDeleteDatabase, FcDeleteRow } from 'react-icons/fc';
 import { FaDeleteLeft } from 'react-icons/fa6';
 import { RiDeleteBack2Fill, RiDeleteBin2Fill, RiDeleteBin5Line } from 'react-icons/ri';
+import DeleteConfirmation from '@/components/DeleteConfirmation';
+import Callbacks from '@/components/Callback';
 
 export default function UsersPage() {
+  console.log('UsersPage rendered');
   const router = useRouter();
-  const { users, loading } = useUserContext();
-  const { refreshUsers ,deleteUser } = useUserContext();
-  const handleDelete = (id: string) =>  deleteUser(id)
+  const { users, loading, refreshUsers, deleteUser } = useUserContext();
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+
+  const handleDelete = useCallback((id: string) => {
+    setUserToDelete(id);
+    setDeleteModalOpen(true);
+  }, []);
+
+  const closeDeleteModal = useCallback(() => {
+    setDeleteModalOpen(false);
+    setUserToDelete(null);
+  }, []);
+
+  const confirmDelete = useCallback(() => {
+    if (userToDelete) {
+      deleteUser(userToDelete);
+      closeDeleteModal();
+    }
+  }, [userToDelete, deleteUser, closeDeleteModal]);
+
+  // const handleDelete = (id: string) => deleteUser(id)
   const handleEdit = (id: string) => router.push(`/admin/users/edit/${id}`);
 
   useEffect(() => {
@@ -79,6 +102,13 @@ export default function UsersPage() {
           </tbody>
         </table>
       </div>
+      <Callbacks/>
+        <DeleteConfirmation
+          open={deleteModalOpen}
+          onClose={closeDeleteModal}
+          onConfirm={confirmDelete}
+          message="Are you sure you want to delete this user?"
+        />
     </div>
   );
 }

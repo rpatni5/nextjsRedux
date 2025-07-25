@@ -6,22 +6,18 @@ import {
   Paper,
   Button,
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Select,
   MenuItem,
   InputLabel,
   FormControl,
-  IconButton,
   Checkbox,
   ListItemText,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import {
   addPermissionAsync,
@@ -31,7 +27,13 @@ import {
 } from '@/lib/store/features/permissions/permissionSlice';
 import { fetchScreensAsync } from '@/lib/store/features/screens/screensSlice';
 import { Role } from '@/lib/role';
+// import MemoizedRow from '@/components/MemoizedRow';
+import React from 'react';
+import dynamic from 'next/dynamic';
+import VirtualizedMenuList from '@/components/VirtualizedMenuList';
 
+const MemoizedRow = dynamic(() => import('@/components/MemoizedRow'));
+// const VirtualizedMenuList = lazy(() => import('@/components/VirtualizedMenuList'));
 
 const permissionOptions = ['read', 'write', 'edit', 'delete'];
 
@@ -48,104 +50,155 @@ export default function Permission() {
   const [permission, setPermissions] = useState<string[]>([]);
   const [role, setRole] = useState<Role>('admin');
 
+  // useEffect(() => {
+  //   const dummy = Array.from({ length: 500 }, (_, i) => ({
+  //     _id: `id-${i}`,
+  //     screenName: `Screen ${i + 1}`,
+  //   }));
+  //   dispatch({ type: 'screens/fetchScreens/fulfilled', payload: dummy });
+  // }, []);
+
+  // useEffect(() => {
+  //   console.log("Effect started");
+
+  //   return () => {
+  //     console.log("Effect cleaned up");
+  //   };
+  // }, []);
+
+  // useEffect(() => {
+  //   const handleResize = () => {
+  //     console.log('resize started:', window.innerWidth);
+  //   };
+
+  //   window.addEventListener('resize', handleResize);
+
+  //   return () => {
+  //     window.removeEventListener('resize', handleResize);
+  //     console.log('resized ended');
+  //   };
+  // }, []);
+
+
+  // useEffect(() => {
+  //   const intervalId = setInterval(() => {
+  //     console.log('time', new Date().toLocaleTimeString());
+  //   }, 2000);
+
+  //   return () => {
+  //     clearInterval(intervalId);
+  //     console.log("cleared timeout")
+  //   };
+  // }, []);
+
+
+  // useEffect(() => {
+  //   dispatch(fetchPermissionsAsync());
+  //   dispatch(fetchScreensAsync());
+  // }, [dispatch]);
 
   useEffect(() => {
-    dispatch(fetchPermissionsAsync());
-    dispatch(fetchScreensAsync());
+    let isMounted = true;
+  
+    const fetchData = async () => {
+      if (isMounted) {
+        dispatch(fetchPermissionsAsync());
+        dispatch(fetchScreensAsync());
+      }
+    };
+  
+    fetchData();
+  
+    return () => {
+      isMounted = false;
+    };
   }, [dispatch]);
+  
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!screenId || permission.length === 0) {
-      alert('Please select screen and permissions.');
-      return;
-    }
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!screenId || permission.length === 0) {
+        alert('Please select screen and permissions.');
+        return;
+      }
 
-    if (editingScreen) {
-      dispatch(
-        editPermissionAsync({
-          id: editingScreen._id,
-          screenId,
-          role,
-          permissions: permission as ('read' | 'write' | 'edit' | 'delete')[],
-        })
-      );
-    } else {
-      dispatch(
-        addPermissionAsync({
-          screenId,
-          role,
-          permissions: permission as ('read' | 'write' | 'edit' | 'delete')[],
-        })
-      );
-    }
+      const payload = {
+        screenId,
+        role,
+        permissions: permission as ('read' | 'write' | 'edit' | 'delete')[],
+      };
 
+      if (editingScreen) {
+        dispatch(editPermissionAsync({ id: editingScreen._id, ...payload }));
+      } else {
+        dispatch(addPermissionAsync(payload));
+      }
 
-    setScreenId('');
-    setPermissions([]);
-    setRole('admin');
-    setEditingScreen(null);
-    setOpen(false);
-  };
+      setScreenId('');
+      setPermissions([]);
+      setRole('admin');
+      setEditingScreen(null);
+      setOpen(false);
+    },
+    [screenId, permission, role, editingScreen, dispatch]
+  );
 
-  const handleEdit = (row: any) => {
+  const handleEdit = useCallback((row: any) => {
     setEditingScreen(row);
     const screenId = typeof row.screenId === 'object' ? row.screenId._id : row.screenId;
     setScreenId(screenId);
-
     setPermissions(row.permissions || []);
+    setRole(row.role);
     setOpen(true);
-  };
+  }, []);
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this permission?')) {
-      dispatch(deletePermissionAsync(id));
-    }
-  };
+  const handleDelete = useCallback(
+    (id: string) => {
+      if (confirm('Are you sure you want to delete this permission?')) {
+        dispatch(deletePermissionAsync(id));
+      }
+    },
+    [dispatch]
+  );
 
-  const columns: GridColDef[] = [
-    {
-      field: 'screenId',
-      headerName: 'Screen Name',
-      flex: 1,
-      valueGetter: (params: any) => {
-        return params.screenName;
+  const columns: GridColDef[] = useMemo(
+    () => [
+      {
+        field: 'screenId',
+        headerName: 'Screen Name',
+        flex: 1,
+        valueGetter: (params: any) => params?.screenName,
+        headerClassName: 'super-app-theme--header',
       },
-      headerClassName: 'super-app-theme--header',
-    },
-    {
-      field: 'role',
-      headerName: 'Role',
-      flex: 1,
-      valueGetter: (params: any) => {
-        return params;
+      {
+        field: 'role',
+        headerName: 'Role',
+        flex: 1,
+        headerClassName: 'super-app-theme--header',
       },
-      headerClassName: 'super-app-theme--header',
-    },
-    {
-      field: 'permissions',
-      headerName: 'Permissions',
-      flex: 2,
-      valueGetter: (params) => (params as ('read' | 'write' | 'edit' | 'delete')[])?.join(', '),
-      headerClassName: 'super-app-theme--header',
-    },
-    {
-      field: 'actions',
-      headerName: 'Actions',
-      flex: 1,
-      sortable: false,
-      renderCell: (params) => (
-        <Box>
-          <IconButton onClick={() => handleEdit(params.row)} color="primary">
-            <EditIcon />
-          </IconButton>
-          <IconButton onClick={() => handleDelete(params.row._id)} color="error">
-            <DeleteIcon />
-          </IconButton>
-        </Box>
-      ),
-    },
-  ];
+      {
+        field: 'permissions',
+        headerName: 'Permissions',
+        flex: 2,
+        valueGetter: (params) => (params as ('read' | 'write' | 'edit' | 'delete')[])?.join(', '),
+        headerClassName: 'super-app-theme--header',
+      },
+      {
+        field: 'actions',
+        headerName: 'Actions',
+        flex: 1,
+        sortable: false,
+        renderCell: (params) => (
+          <Suspense fallback={<div>Loading...</div>}>
+            <MemoizedRow row={params.row} onEdit={handleEdit} onDelete={handleDelete} />
+          </Suspense>
+        )
+        
+      },
+    ],
+    [handleEdit, handleDelete]
+  );
 
   return (
     <Box sx={{ padding: 4 }}>
@@ -213,14 +266,29 @@ export default function Permission() {
               onChange={(e) => setScreenId(e.target.value)}
               label="Screen"
               sx={{ borderRadius: 2 }}
-            >
-              {screens.map((screen) => (
-                <MenuItem key={screen._id} value={screen._id}>
-                  {screen.screenName}
-                </MenuItem>
-              ))}
-            </Select>
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    // maxHeight: ITEM_HEIGHT * 5,
+                    width: 250,
+                  },
+                },
+                MenuListProps: {
+                  component: (props) => (
+                    <Suspense fallback={<div>Loading.........</div>}>  
+                      <VirtualizedMenuList {...props}
+                        items={screens}
+                        labelKey='screenName'
+                        valueKey="_id"
+                      />
+                    </Suspense>
+
+                  ),
+                },
+              }}
+            />
           </FormControl>
+
 
           <FormControl fullWidth sx={{ mb: 2 }}>
             <InputLabel id="permission-select-label">Permissions</InputLabel>
@@ -255,7 +323,6 @@ export default function Permission() {
               <MenuItem value="worker">Worker</MenuItem>
             </Select>
           </FormControl>
-
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 2 }}>

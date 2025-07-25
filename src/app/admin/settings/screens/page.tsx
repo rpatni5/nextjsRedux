@@ -16,7 +16,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import {
   addScreenAsync,
@@ -24,6 +24,7 @@ import {
   editScreenAsync,
   deleteScreenAsync,
 } from '@/lib/store/features/screens/screensSlice';
+import MemoizedRow from '@/components/MemoizedRow';
 
 export default function Screens() {
   const dispatch = useAppDispatch();
@@ -34,10 +35,34 @@ export default function Screens() {
   const [editingScreen, setEditingScreen] = useState<null | { _id: string; screenName: string; route: string }>(null);
   const [screenName, setScreenName] = useState('');
   const [screenRoute, setScreenRoute] = useState('');
-
+  const [str, setStr] = useState(1);
+  const [doubled, setDoubled] = useState(0);
+  const [forceRender, setForceRender] = useState(false);
   useEffect(() => {
     dispatch(fetchScreensAsync());
   }, [dispatch]);
+
+  // const vlue = useMemo(() => {
+  //   console.log(' useMemo  ', str);
+  //   return str * 10;
+  // }, [str]);
+
+  // useEffect(() => {
+  //   console.log(' useEffect ran ', str);
+  //   const result = str * 10;
+  //   setDoubled(result);
+  // },[str]);
+
+  // useEffect(() => {
+  //   console.log(' useEffect no deps');
+  // });
+
+  // console.log('rendered :', str, ' useMemo:', vlue, 'useEffect:', doubled);
+
+  // const handleClick = () => {
+  //   console.log('buton');
+  //   setStr((x) => x + 1);
+  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,17 +113,20 @@ export default function Screens() {
       flex: 1,
       sortable: false,
       renderCell: (params) => (
-        <Box>
-          <IconButton onClick={() => handleEdit(params.row)} color="primary">
-            <EditIcon />
-          </IconButton>
-          <IconButton onClick={() => handleDelete(params.row._id)} color="error">
-            <DeleteIcon />
-          </IconButton>
-        </Box>
+        <MemoizedRow
+        row={params.row}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
       ),
     },
   ];
+  
+  const save = () => {
+    console.log(' Set same str ');
+    setForceRender(prev => !prev);
+  };
+  
 
   return (
     <Box sx={{ padding: 4 }}>
@@ -111,6 +139,7 @@ export default function Screens() {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => {
+            // handleClick()
             setEditingScreen(null);
             setScreenName('');
             setScreenRoute('');
@@ -120,6 +149,7 @@ export default function Screens() {
         >
           Add Screen
         </Button>
+        {/* <Button onClick={save}>Set same str</Button> */}
       </Box>
 
       <Paper elevation={3} sx={{ borderRadius: 2, overflow: 'hidden' }}>
