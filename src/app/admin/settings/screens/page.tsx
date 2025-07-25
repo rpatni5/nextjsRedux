@@ -25,6 +25,7 @@ import {
   deleteScreenAsync,
 } from '@/lib/store/features/screens/screensSlice';
 import MemoizedRow from '@/components/MemoizedRow';
+import MemoizedRow from '@/components/MemoizedRow';
 
 export default function Screens() {
   const dispatch = useAppDispatch();
@@ -42,6 +43,28 @@ export default function Screens() {
   useEffect(() => {
     dispatch(fetchScreensAsync());
   }, [dispatch]);
+
+  // const vlue = useMemo(() => {
+  //   console.log(' useMemo  ', str);
+  //   return str * 10;
+  // }, [str]);
+
+  // useEffect(() => {
+  //   console.log(' useEffect ran ', str);
+  //   const result = str * 10;
+  //   setDoubled(result);
+  // },[str]);
+
+  // useEffect(() => {
+  //   console.log(' useEffect no deps');
+  // });
+
+  // console.log('rendered :', str, ' useMemo:', vlue, 'useEffect:', doubled);
+
+  // const handleClick = () => {
+  //   console.log('buton');
+  //   setStr((x) => x + 1);
+  // };
 
   // const vlue = useMemo(() => {
   //   console.log(' useMemo  ', str);
@@ -119,9 +142,20 @@ export default function Screens() {
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
+        <MemoizedRow
+        row={params.row}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
       ),
     },
   ];
+  
+  const save = () => {
+    console.log(' Set same str ');
+    setForceRender(prev => !prev);
+  };
+  
   
   const save = () => {
     console.log(' Set same str ');
@@ -141,6 +175,7 @@ export default function Screens() {
           startIcon={<AddIcon />}
           onClick={() => {
             // handleClick()
+            // handleClick()
             setEditingScreen(null);
             setScreenName('');
             setScreenRoute('');
@@ -150,6 +185,7 @@ export default function Screens() {
         >
           Add Screen
         </Button>
+        {/* <Button onClick={save}>Set same str</Button> */}
         {/* <Button onClick={save}>Set same str</Button> */}
       </Box>
 
